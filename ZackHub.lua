@@ -452,6 +452,18 @@ local function AutoGrinderFunction(Value)
 			Image = 4483362458,
 		})
 
+		-- Improve proximity prompts
+		local launderPrompt = workspace.LaunderPrompts.LaunderTrigger.PromptPart:FindFirstChild("LaunderBriefcasePrompt")
+		if launderPrompt then
+			launderPrompt.MaxActivationDistance = 50
+			launderPrompt.HoldDuration = 0
+		end
+		
+		local ringPrompt = workspace.WorldBuyableItems["Fake Diamond Ring"].Handle.PromptAttachment:FindFirstChild("ProximityPrompt")
+		if ringPrompt then
+			ringPrompt.MaxActivationDistance = 50
+			ringPrompt.HoldDuration = 0
+		end
 
 		while AutoGrinderRunning do
 
