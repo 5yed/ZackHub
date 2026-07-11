@@ -587,6 +587,17 @@ local function LowLagFunction()
 		end
 	end
 
+	-- Remove all world buyable items except Crowbar and Fake Diamond Ring
+	local worldBuyableItems = workspace:FindFirstChild("WorldBuyableItems")
+	
+	if worldBuyableItems then
+		for _, item in ipairs(worldBuyableItems:GetChildren()) do
+			if item.Name ~= "Crowbar" and item.Name ~= "Fake Diamond Ring" then
+				item:Destroy()
+			end
+		end
+	end
+
 	-- Remove wheels from current vehicle
 	local vehicles = workspace:WaitForChild("Vehicles")
 	for _, vehicle in ipairs(vehicles:GetChildren()) do
