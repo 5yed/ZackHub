@@ -544,19 +544,25 @@ local function RemoveBorderLimits()
 		end
 	end)
 end
-local LowLagApplied = false
 
-local function LowLagFunction()
-	if LowLagApplied then
-		Library:Notify({
-			Title = "Low Lag",
-			Content = "Already applied.",
-			Duration = 5,
-			Image = 4483362458,
-		})
+local LowLagApplied = false
+local VehicleWatcherConnection
+
+local function removeVehicleWheels(vehicle)
+	if vehicle:GetAttribute("OwnerUserId") ~= game.Players.LocalPlayer.UserId then
 		return
 	end
 
+	local wheels = vehicle:FindFirstChild("Wheels")
+	if wheels then
+		wheels:Destroy()
+	end
+end
+
+local function LowLagFunction()
+	if LowLagApplied then
+		return
+	end
 	LowLagApplied = true
 
 	-- Remove textures and decals
@@ -566,21 +572,33 @@ local function LowLagFunction()
 		end
 	end
 
-	-- Remove laggy folders/models
-	local objectsToRemove = {
+	-- Remove laggy objects
+	for _, name in ipairs({
 		"Gates",
 		"Map",
 		"Scanners",
 		"TacoHellPuddles",
 		"Tunnel",
-		"BorderSigns"
-	}
-
-	for _, name in ipairs(objectsToRemove) do
+		"BorderSigns",
+	}) do
 		local obj = workspace:FindFirstChild(name)
 		if obj then
 			obj:Destroy()
 		end
+	end
+
+	-- Remove wheels from current vehicle
+	local vehicles = workspace:WaitForChild("Vehicles")
+	for _, vehicle in ipairs(vehicles:GetChildren()) do
+		removeVehicleWheels(vehicle)
+	end
+
+	-- Remove wheels from future spawned vehicles
+	if not VehicleWatcherConnection then
+		VehicleWatcherConnection = vehicles.ChildAdded:Connect(function(vehicle)
+			task.wait(0.25) -- Give the vehicle time to finish loading
+			removeVehicleWheels(vehicle)
+		end)
 	end
 
 	Library:Notify({
@@ -590,7 +608,6 @@ local function LowLagFunction()
 		Image = 4483362458,
 	})
 end
-
 -----------------------------------------------
 -- UI SETUP
 -----------------------------------------------
