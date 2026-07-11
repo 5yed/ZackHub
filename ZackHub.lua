@@ -255,7 +255,7 @@ local HEIGHT_ABOVE_GROUND = 8
 local WAIT_BETWEEN_JUMPS = 2
 
 local Locations = {
-	["Smuggler 1"] = CFrame.new(-201.39, 17.01, 1244.04),
+	["Smuggler 1"] = CFrame.new(155.447144, 17.0472984, 261.385406),
 	["Smuggler 2"] = CFrame.new(208.26, 17.07, -46.06),
 	["Jewelry"] = CFrame.new(-75.03, 18.45, 926.13),
 	["Bank"] = CFrame.new(-286.19, 17.05, -252.29),
@@ -465,7 +465,7 @@ local function AutoGrinderFunction(Value)
 			ringPrompt.HoldDuration = 0
 		end
 
-		local smugglerPrompt = workspace.NPC.Seller3.HumanoidRootPart:FindFirstChild("SellSmuggledGoodsPrompt")
+		local smugglerPrompt = workspace.NPC.Seller.HumanoidRootPart:FindFirstChild("SellSmuggledGoodsPrompt")
 		if smugglerPrompt then
 			smugglerPrompt.MaxActivationDistance = 50
 			smugglerPrompt.HoldDuration = 0
