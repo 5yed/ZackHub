@@ -423,6 +423,13 @@ end
 local function AutoGrinderFunction(Value)
 
 	if not Value then
+        if AutoGrinderRunning then
+            StopAutoGrinder()
+        end
+        return
+    end
+	
+	if not Value then
 		StopAutoGrinder()
 		return
 	end
