@@ -497,6 +497,17 @@ local function AutoGrinderFunction(Value)
 	end)
 
 end
+
+--------------------------------------------------
+-- REMOVE BLACK MARKET
+--------------------------------------------------
+local function DestroyBlackMarket()
+	local blackMarket = workspace:FindFirstChild("BlackMarket")
+	
+	if blackMarket then
+	    blackMarket:Destroy()
+	end
+end
 -----------------------------------------------
 -- UI SETUP
 -----------------------------------------------
@@ -597,6 +608,13 @@ local AutoRefuel = Misc:CreateToggle({
    Callback = function(Value)
         AutoRefuelFunction(Value)
     end
+})
+
+local DestroyBlack = Misc:CreateButton({
+	Name = "Destroy Black Market(Recommended for Autofarm)",
+	Callback = function()
+		DestroyBlackMarket()
+	end,
 })
 
 local BetterGates = Misc:CreateButton({
