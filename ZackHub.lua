@@ -45,45 +45,31 @@ local Window = Library:CreateWindow({
 -----------------------------------------------
 -- FUNCTIONS
 -----------------------------------------------
-local AutoRefuelConnection
-
 local function AutoRefuelFunction(Value)
-    -- Disable auto refuel
     if not Value then
-        if AutoRefuelConnection then
-            AutoRefuelConnection:Disconnect()
-            AutoRefuelConnection = nil
-        end
         return
     end
 
-    local player = game.Players.LocalPlayer
-    local userId = player.UserId
+    local userId = game.Players.LocalPlayer.UserId
+    local found = false
 
-    local vehicle
+    for _, vehicle in ipairs(workspace.Vehicles:GetChildren()) do
+        if vehicle:GetAttribute("OwnerUserId") == userId then
+            found = true
 
-    for _, v in ipairs(workspace.Vehicles:GetChildren()) do
-        if v:GetAttribute("OwnerUserId") == userId then
-            vehicle = v
+            local fuel = vehicle:GetAttribute("CurrentFuel")
+
+            if fuel and fuel <= 0 then
+                vehicle:SetAttribute("CurrentFuel", 100)
+            end
+
             break
         end
     end
 
-    if not vehicle then
-        warn("No vehicle found.")
-        return
+    if not found then
+        warn("No vehicle found for UserId:", userId)
     end
-
-    -- Prevent duplicate connections
-    if AutoRefuelConnection then
-        AutoRefuelConnection:Disconnect()
-    end
-
-    AutoRefuelConnection = vehicle:GetAttributeChangedSignal("CurrentFuel"):Connect(function()
-        if vehicle:GetAttribute("CurrentFuel") <= 0 then
-            vehicle:SetAttribute("CurrentFuel", 100)
-        end
-    end)
 end
 
 local BetterGatesApplied = false
