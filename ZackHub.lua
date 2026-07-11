@@ -540,14 +540,10 @@ local function RemoveBorderLimits()
 			parkingRestrictors:Destroy()
 		end
 	end
-
-	-- Initial cleanup
+	
 	scan()
-
-	-- Destroy BorderSpeedLimitRegion parts as soon as they load/stream in
 	gameRegions.DescendantAdded:Connect(tryDelete)
 
-	-- Rescan every 5 minutes
 	task.spawn(function()
 		while true do
 			task.wait(300)
@@ -555,13 +551,6 @@ local function RemoveBorderLimits()
 		end
 	end)
 end
-
-local DestoryBorderLimitations = Misc:CreateButton({
-	Name = "Remove Border Speed Limit and Border Parking Restrictors",
-	Callback = function()
-		RemoveBorderLimits()
-	end,
-})
 -----------------------------------------------
 -- UI SETUP
 -----------------------------------------------
