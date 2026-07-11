@@ -508,7 +508,7 @@ local function AutoGrinderFunction(Value)
 					end
 				
 				elseif location == Locations["Smuggler 1"] then
-					local prompt = workspace.NPC.Seller3.HumanoidRootPart.SellSmuggledGoodsPrompt
+					local prompt = workspace.NPC.Seller.HumanoidRootPart.SellSmuggledGoodsPrompt
 					fireproximityprompt(prompt)
 					task.wait(0.5)
 				
