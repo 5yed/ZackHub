@@ -471,25 +471,25 @@ local function AutoGrinderFunction(Value)
 					until distance < 10 or not AutoGrinderRunning
 
 				-- Give the car a moment to settle near the prompt
-				task.wait(0.5)
+				task.wait(1)
 				
 				if location == Locations["Buy Jewelry"] then
 					local prompt = workspace.WorldBuyableItems["Fake Diamond Ring"].Handle.PromptAttachment.ProximityPrompt
 				
 					for i = 1, 5 do
 						fireproximityprompt(prompt)
-						task.wait(0.15)
+						task.wait(0.5)
 					end
 				
 				elseif location == Locations["Smuggler 1"] then
 					local prompt = workspace.NPC.Seller3.HumanoidRootPart.SellSmuggledGoodsPrompt
 					fireproximityprompt(prompt)
-					task.wait(0.5)
+					task.wait(1)
 				
 				elseif location == Locations["Launder"] then
 					local prompt = workspace.LaunderPrompts.LaunderTrigger.PromptPart.LaunderBriefcasePrompt
 					fireproximityprompt(prompt)
-					task.wait(0.5)
+					task.wait(1)
 				end
 
 				end
@@ -580,7 +580,7 @@ local function LowLagFunction()
 	LowLagApplied = true
     for i = 1, 3 do
         game.Players.LocalPlayer.Character:PivotTo(Locations["Smuggler 1"])
-        task.wait(0.1)
+        task.wait(0.5)
     end
 
 	-- Remove textures and decals
