@@ -478,7 +478,7 @@ local function AutoGrinderFunction(Value)
 				
 					for i = 1, 5 do
 						fireproximityprompt(prompt)
-						task.wait(0.5)
+						task.wait(0.2)
 					end
 				
 				elseif location == Locations["Smuggler 1"] then
