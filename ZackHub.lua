@@ -255,7 +255,7 @@ local HEIGHT_ABOVE_GROUND = 8
 local WAIT_BETWEEN_JUMPS = 2
 
 local Locations = {
-	["Smuggler 1"] = CFrame.new(155.447144, 17.0472984, 261.385406),
+	["Smuggler 1"] = CFrame.new(-201.39, 17.01, 1244.04),
 	["Smuggler 2"] = CFrame.new(208.26, 17.07, -46.06),
 	["Jewelry"] = CFrame.new(-75.03, 18.45, 926.13),
 	["Bank"] = CFrame.new(-286.19, 17.05, -252.29),
@@ -489,7 +489,7 @@ local function AutoGrinderFunction(Value)
 					end
 				
 				elseif location == Locations["Smuggler 1"] then
-					local prompt = workspace.NPC.Seller.HumanoidRootPart.SellSmuggledGoodsPrompt
+					local prompt = workspace.NPC.Seller3.HumanoidRootPart.SellSmuggledGoodsPrompt
 					fireproximityprompt(prompt)
 					task.wait(0.5)
 				
@@ -617,22 +617,30 @@ local function LowLagFunction()
 		end
 	end
 
+    local model = workspace:FindFirstChild("Map")
+        and workspace.Map:FindFirstChild("Models")
+        and workspace.Map.Models:FindFirstChild("Model")
+
+    if model then
+        model:Destroy()
+    end
+
 	-- Improve proximity prompts
 	local launderPrompt = workspace.LaunderPrompts.LaunderTrigger.PromptPart:FindFirstChild("LaunderBriefcasePrompt")
 	if launderPrompt then
-		launderPrompt.MaxActivationDistance = 50
+		launderPrompt.MaxActivationDistance = 150
 		launderPrompt.HoldDuration = 0
 	end
 	
 	local ringPrompt = workspace.WorldBuyableItems["Fake Diamond Ring"].Handle.PromptAttachment:FindFirstChild("ProximityPrompt")
 	if ringPrompt then
-		ringPrompt.MaxActivationDistance = 50
+		ringPrompt.MaxActivationDistance = 150
 		ringPrompt.HoldDuration = 0
 	end
 
-	local smugglerPrompt = workspace.NPC.Seller.HumanoidRootPart:FindFirstChild("SellSmuggledGoodsPrompt")
+	local smugglerPrompt = workspace.NPC.Seller3.HumanoidRootPart:FindFirstChild("SellSmuggledGoodsPrompt")
 	if smugglerPrompt then
-		smugglerPrompt.MaxActivationDistance = 50
+		smugglerPrompt.MaxActivationDistance = 150
 		smugglerPrompt.HoldDuration = 0
 	end
 	
