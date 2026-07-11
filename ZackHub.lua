@@ -544,6 +544,53 @@ local function RemoveBorderLimits()
 		end
 	end)
 end
+local LowLagApplied = false
+
+local function LowLagFunction()
+	if LowLagApplied then
+		Library:Notify({
+			Title = "Low Lag",
+			Content = "Already applied.",
+			Duration = 5,
+			Image = 4483362458,
+		})
+		return
+	end
+
+	LowLagApplied = true
+
+	-- Remove textures and decals
+	for _, obj in ipairs(workspace:GetDescendants()) do
+		if obj:IsA("Texture") or obj:IsA("Decal") then
+			obj:Destroy()
+		end
+	end
+
+	-- Remove laggy folders/models
+	local objectsToRemove = {
+		"Gates",
+		"Map",
+		"Scanners",
+		"TacoHellPuddles",
+		"Tunnel",
+		"BorderSigns"
+	}
+
+	for _, name in ipairs(objectsToRemove) do
+		local obj = workspace:FindFirstChild(name)
+		if obj then
+			obj:Destroy()
+		end
+	end
+
+	Library:Notify({
+		Title = "Low Lag",
+		Content = "Low lag mode applied.",
+		Duration = 5,
+		Image = 4483362458,
+	})
+end
+
 -----------------------------------------------
 -- UI SETUP
 -----------------------------------------------
@@ -671,5 +718,12 @@ local DestoryBorderLimitations = Misc:CreateButton({
 	Name = "Remove Border Speed Limit and Border Parking Restrictors",
 	Callback = function()
 		RemoveBorderLimits()
+	end,
+})
+
+local LowLagButton = Misc:CreateButton({
+	Name = "Low Lag",
+	Callback = function()
+		LowLagFunction()
 	end,
 })
