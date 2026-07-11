@@ -250,7 +250,7 @@ end
 -- CAR TELEPORT SYSTEM
 -----------------------------------------------
 
-local STEP_SIZE = 1500
+local STEP_SIZE = 900
 local HEIGHT_ABOVE_GROUND = 8
 local WAIT_BETWEEN_JUMPS = 2
 
@@ -625,7 +625,6 @@ local function LowLagFunction()
 	-- Remove laggy objects
 	for _, name in ipairs({
 		"Gates",
-		"Map",
 		"Scanners",
 		"TacoHellPuddles",
 		"Tunnel",
