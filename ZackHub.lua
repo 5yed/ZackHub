@@ -508,6 +508,60 @@ local function DestroyBlackMarket()
 	    blackMarket:Destroy()
 	end
 end
+
+--------------------------------------------------
+-- REMOVE BORDER SPEED LIMIT AND PARKING RESTRICTORS
+--------------------------------------------------
+local BorderLimitWatcherStarted = false
+
+local function RemoveBorderLimits()
+	if BorderLimitWatcherStarted then
+		return
+	end
+	BorderLimitWatcherStarted = true
+
+	local gameRegions = workspace:WaitForChild("GameRegions")
+	local deletedParts = {}
+
+	local function tryDelete(obj)
+		if obj:IsA("Part") and obj.Name == "BorderSpeedLimitRegion" and not deletedParts[obj] then
+			deletedParts[obj] = true
+			obj:Destroy()
+		end
+	end
+
+	local function scan()
+		for _, obj in ipairs(gameRegions:GetDescendants()) do
+			tryDelete(obj)
+		end
+
+		local parkingRestrictors = workspace:FindFirstChild("ParkingRestrictors")
+		if parkingRestrictors then
+			parkingRestrictors:Destroy()
+		end
+	end
+
+	-- Initial cleanup
+	scan()
+
+	-- Destroy BorderSpeedLimitRegion parts as soon as they load/stream in
+	gameRegions.DescendantAdded:Connect(tryDelete)
+
+	-- Rescan every 5 minutes
+	task.spawn(function()
+		while true do
+			task.wait(300)
+			scan()
+		end
+	end)
+end
+
+local DestoryBorderLimitations = Misc:CreateButton({
+	Name = "Remove Border Speed Limit and Border Parking Restrictors",
+	Callback = function()
+		RemoveBorderLimits()
+	end,
+})
 -----------------------------------------------
 -- UI SETUP
 -----------------------------------------------
@@ -628,5 +682,12 @@ local InfiniteYieldButton = Misc:CreateButton({
 	Name = "Load Infinite Yield",
 	Callback = function()
 		InfiniteYieldFunction()
+	end,
+})
+
+local DestoryBorderLimitations = Misc:CreateButton({
+	Name = "Remove Border Speed Limit and Border Parking Restrictors",
+	Callback = function()
+		RemoveBorderLimits()
 	end,
 })
