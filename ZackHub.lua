@@ -428,12 +428,6 @@ local function AutoGrinderFunction(Value)
         end
         return
     end
-	
-	if not Value then
-		StopAutoGrinder()
-		return
-	end
-
 
 	if AutoGrinderThread then
 		return
@@ -475,7 +469,7 @@ local function AutoGrinderFunction(Value)
 						local distance =
 							(vehicle:GetPivot().Position - location.Position).Magnitude
 
-					until distance < 20 or not AutoGrinderRunning
+					until distance < 10 or not AutoGrinderRunning
 
 				-- Give the car a moment to settle near the prompt
 				task.wait(0.5)
@@ -497,16 +491,6 @@ local function AutoGrinderFunction(Value)
 					local prompt = workspace.LaunderPrompts.LaunderTrigger.PromptPart.LaunderBriefcasePrompt
 					fireproximityprompt(prompt)
 					task.wait(0.5)
-				end
-
-				if location == Locations["Buy Jewelry"] then
-					local prompt = workspace.WorldBuyableItems["Fake Diamond Ring"]
-						.Handle.PromptAttachment.ProximityPrompt
-				
-					for i = 1, 5 do
-						fireproximityprompt(prompt)
-						task.wait(0.1)
-					end
 				end
 
 				end
@@ -578,6 +562,7 @@ end
 
 local LowLagApplied = false
 local VehicleWatcherConnection
+local BuyableWatcherConnection
 
 local function removeVehicleWheels(vehicle)
 	if vehicle:GetAttribute("OwnerUserId") ~= game.Players.LocalPlayer.UserId then
@@ -603,7 +588,7 @@ local function LowLagFunction()
 		end
 	end
 
-	-- Remove laggy objects
+	-- Remove workspace objects
 	for _, name in ipairs({
 		"Gates",
 		"Scanners",
@@ -617,57 +602,69 @@ local function LowLagFunction()
 		end
 	end
 
-    local model = workspace:FindFirstChild("Map")
-        and workspace.Map:FindFirstChild("Models")
-        and workspace.Map.Models:FindFirstChild("Model")
-
-    if model then
-        model:Destroy()
-    end
-
-	-- Improve proximity prompts
-	local launderPrompt = workspace.LaunderPrompts.LaunderTrigger.PromptPart:FindFirstChild("LaunderBriefcasePrompt")
-	if launderPrompt then
-		launderPrompt.MaxActivationDistance = 150
-		launderPrompt.HoldDuration = 0
-	end
-	
-	local ringPrompt = workspace.WorldBuyableItems["Fake Diamond Ring"].Handle.PromptAttachment:FindFirstChild("ProximityPrompt")
-	if ringPrompt then
-		ringPrompt.MaxActivationDistance = 150
-		ringPrompt.HoldDuration = 0
-	end
-
-	local smugglerPrompt = workspace.NPC.Seller3.HumanoidRootPart:FindFirstChild("SellSmuggledGoodsPrompt")
-	if smugglerPrompt then
-		smugglerPrompt.MaxActivationDistance = 150
-		smugglerPrompt.HoldDuration = 0
-	end
-	
-	-- Remove all world buyable items except Crowbar and Fake Diamond Ring
-	local worldBuyableItems = workspace:FindFirstChild("WorldBuyableItems")
-
-	if worldBuyableItems then
-		for _, obj in ipairs(worldBuyableItems:GetDescendants()) do
-			if (obj:IsA("Model") or obj:IsA("Folder")) and
-				obj.Name ~= "Crowbar" and
-				obj.Name ~= "Fake Diamond Ring" then
-	
-				obj:Destroy()
+	-- Remove workspace.Map.Models.Model
+	local map = workspace:FindFirstChild("Map")
+	if map then
+		local models = map:FindFirstChild("Models")
+		if models then
+			local model = models:FindFirstChild("Model")
+			if model then
+				model:Destroy()
 			end
 		end
 	end
 
-	-- Remove wheels from current vehicle
+	-- Improve prompts
+	local prompts = {
+		workspace.LaunderPrompts.LaunderTrigger.PromptPart:FindFirstChild("LaunderBriefcasePrompt"),
+		workspace.WorldBuyableItems["Fake Diamond Ring"].Handle.PromptAttachment:FindFirstChild("ProximityPrompt"),
+		workspace.NPC.Seller3.HumanoidRootPart:FindFirstChild("SellSmuggledGoodsPrompt"),
+	}
+
+	for _, prompt in ipairs(prompts) do
+		if prompt then
+			prompt.MaxActivationDistance = 150
+			prompt.HoldDuration = 0
+		end
+	end
+
+	-- Remove world buyable items except Crowbar and Fake Diamond Ring
+	local worldBuyableItems = workspace:FindFirstChild("WorldBuyableItems")
+	if worldBuyableItems then
+
+		local function cleanup()
+			for _, item in ipairs(worldBuyableItems:GetChildren()) do
+				if item.Name ~= "Crowbar" and item.Name ~= "Fake Diamond Ring" then
+					item:Destroy()
+				end
+			end
+		end
+
+		cleanup()
+
+		if not BuyableWatcherConnection then
+			BuyableWatcherConnection = worldBuyableItems.ChildAdded:Connect(function(item)
+				if item.Name ~= "Crowbar" and item.Name ~= "Fake Diamond Ring" then
+					task.wait()
+					if item.Parent then
+						item:Destroy()
+					end
+				end
+			end)
+		end
+	end
+
+	-- Remove wheels from existing vehicles
 	local vehicles = workspace:WaitForChild("Vehicles")
+
 	for _, vehicle in ipairs(vehicles:GetChildren()) do
 		removeVehicleWheels(vehicle)
 	end
 
-	-- Remove wheels from future spawned vehicles
+	-- Remove wheels from future vehicles
 	if not VehicleWatcherConnection then
 		VehicleWatcherConnection = vehicles.ChildAdded:Connect(function(vehicle)
-			task.wait(0.25) -- Give the vehicle time to finish loading
+			task.wait(0.5)
 			removeVehicleWheels(vehicle)
 		end)
 	end
