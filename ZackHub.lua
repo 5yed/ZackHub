@@ -589,11 +589,14 @@ local function LowLagFunction()
 
 	-- Remove all world buyable items except Crowbar and Fake Diamond Ring
 	local worldBuyableItems = workspace:FindFirstChild("WorldBuyableItems")
-	
+
 	if worldBuyableItems then
-		for _, item in ipairs(worldBuyableItems:GetChildren()) do
-			if item.Name ~= "Crowbar" and item.Name ~= "Fake Diamond Ring" then
-				item:Destroy()
+		for _, obj in ipairs(worldBuyableItems:GetDescendants()) do
+			if (obj:IsA("Model") or obj:IsA("Folder")) and
+				obj.Name ~= "Crowbar" and
+				obj.Name ~= "Fake Diamond Ring" then
+	
+				obj:Destroy()
 			end
 		end
 	end
