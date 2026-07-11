@@ -11,7 +11,7 @@ local Window = Library:CreateWindow({
    ShowText = "ZackHub", -- for mobile users to unhide Rayfield, change if you'd like
    Theme = "DarkBlue", -- Check https://docs.sirius.menu/rayfield/configuration/themes
 
-   ToggleUIKeybind = "Z", -- The keybind to toggle the UI visibility (string like "K" or Enum.KeyCode)
+   ToggleUIKeybind = "P", -- The keybind to toggle the UI visibility (string like "K" or Enum.KeyCode)
 
    DisableRayfieldPrompts = false,
    DisableBuildWarnings = false, -- Prevents Rayfield from emitting warnings when the script has a version mismatch with the interface.
