@@ -421,7 +421,6 @@ local function StopAutoGrinder()
 end
 
 local function AutoGrinderFunction(Value)
-
 	if not Value then
         if AutoGrinderRunning then
             StopAutoGrinder()
@@ -562,7 +561,6 @@ end
 
 local LowLagApplied = false
 local VehicleWatcherConnection
-local BuyableWatcherConnection
 
 local function removeVehicleWheels(vehicle)
 	if vehicle:GetAttribute("OwnerUserId") ~= game.Players.LocalPlayer.UserId then
@@ -580,6 +578,10 @@ local function LowLagFunction()
 		return
 	end
 	LowLagApplied = true
+    for i = 1, 3 do
+        game.Players.LocalPlayer.Character:PivotTo(Locations["Smuggler 1"])
+        task.wait(0.1)
+    end
 
 	-- Remove textures and decals
 	for _, obj in ipairs(workspace:GetDescendants()) do
@@ -629,30 +631,14 @@ local function LowLagFunction()
 	end
 
 	-- Remove world buyable items except Crowbar and Fake Diamond Ring
-	local worldBuyableItems = workspace:FindFirstChild("WorldBuyableItems")
-	if worldBuyableItems then
+	local worldBuyableItems = workspace:WaitForChild("WorldBuyableItems")
 
-		local function cleanup()
-			for _, item in ipairs(worldBuyableItems:GetChildren()) do
-				if item.Name ~= "Crowbar" and item.Name ~= "Fake Diamond Ring" then
-					item:Destroy()
-				end
-			end
-		end
-
-		cleanup()
-
-		if not BuyableWatcherConnection then
-			BuyableWatcherConnection = worldBuyableItems.ChildAdded:Connect(function(item)
-				if item.Name ~= "Crowbar" and item.Name ~= "Fake Diamond Ring" then
-					task.wait()
-					if item.Parent then
-						item:Destroy()
-					end
-				end
-			end)
-		end
-	end
+    for _, item in ipairs(worldBuyableItems:GetChildren()) do
+        if item.Name ~= "Crowbar" and item.Name ~= "Fake Diamond Ring" then
+            print("Destroying:", item.Name)
+            item:Destroy()
+        end
+    end
 
 	-- Remove wheels from existing vehicles
 	local vehicles = workspace:WaitForChild("Vehicles")
@@ -713,7 +699,7 @@ local SettingsSection = Autofarm:CreateSection("Teleport Settings")
 
 Autofarm:CreateSlider({
 	Name = "Step Size",
-	Range = {100,2000},
+	Range = {100,10000},
 	Increment = 100,
 	Suffix = " studs",
 	CurrentValue = STEP_SIZE,
