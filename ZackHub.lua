@@ -250,7 +250,7 @@ end
 -- CAR TELEPORT SYSTEM
 -----------------------------------------------
 
-local STEP_SIZE = 800
+local STEP_SIZE = 1500
 local HEIGHT_ABOVE_GROUND = 8
 local WAIT_BETWEEN_JUMPS = 2
 
