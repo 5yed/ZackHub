@@ -465,6 +465,12 @@ local function AutoGrinderFunction(Value)
 			ringPrompt.HoldDuration = 0
 		end
 
+		local smugglerPrompt = workspace.NPC.Seller3.HumanoidRootPart:FindFirstChild("SellSmuggledGoodsPrompt")
+		if smugglerPrompt then
+			smugglerPrompt.MaxActivationDistance = 50
+			smugglerPrompt.HoldDuration = 0
+		end
+
 		while AutoGrinderRunning do
 
 			for _, location in ipairs(GrinderRoute) do
@@ -489,6 +495,38 @@ local function AutoGrinderFunction(Value)
 							(vehicle:GetPivot().Position - location.Position).Magnitude
 
 					until distance < 20 or not AutoGrinderRunning
+
+				-- Give the car a moment to settle near the prompt
+				task.wait(0.5)
+				
+				if location == Locations["Buy Jewelry"] then
+					local prompt = workspace.WorldBuyableItems["Fake Diamond Ring"].Handle.PromptAttachment.ProximityPrompt
+				
+					for i = 1, 5 do
+						fireproximityprompt(prompt)
+						task.wait(0.15)
+					end
+				
+				elseif location == Locations["Smuggler 1"] then
+					local prompt = workspace.NPC.Seller3.HumanoidRootPart.SellSmuggledGoodsPrompt
+					fireproximityprompt(prompt)
+					task.wait(0.5)
+				
+				elseif location == Locations["Launder"] then
+					local prompt = workspace.LaunderPrompts.LaunderTrigger.PromptPart.LaunderBriefcasePrompt
+					fireproximityprompt(prompt)
+					task.wait(0.5)
+				end
+
+				if location == Locations["Buy Jewelry"] then
+					local prompt = workspace.WorldBuyableItems["Fake Diamond Ring"]
+						.Handle.PromptAttachment.ProximityPrompt
+				
+					for i = 1, 5 do
+						fireproximityprompt(prompt)
+						task.wait(0.1)
+					end
+				end
 
 				end
 
