@@ -1,4 +1,28 @@
 ------------------------------------
+-- WHITELIST CHECK
+------------------------------------
+local url = "https://raw.githubusercontent.com/5yed/ZackHub/refs/heads/main/Whitelist"
+local content = game:HttpGet(url)
+
+local player = game.Players.LocalPlayer
+local isWhitelisted = false
+
+for line in content:gmatch("[^\r\n]+") do
+    local userId, enabled = line:match("^(%d+), (%a+)$")
+
+    if tonumber(userId) == player.UserId then
+        isWhitelisted = enabled:lower() == "true"
+        break
+    end
+end
+
+if isWhitelisted then
+    return
+else
+    player:Kick("You are not whitelisted to use this script.")
+end
+
+------------------------------------
 -- LIBRARY SETUP
 ------------------------------------
 local Library = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
