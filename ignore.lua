@@ -48,7 +48,7 @@ local Window = Library:CreateWindow({
    -- ScriptID = "sid_xxxxxxxxxxxx", -- Your Script ID from developer.sirius.menu — enables analytics, managed keys, and script hosting
 
    ConfigurationSaving = {
-      Enabled = true,
+      Enabled = false,
       FolderName = nil, -- Create a custom folder for your hub/game
       FileName = "Zack Hub"
    },
@@ -306,9 +306,25 @@ local Group1Set = {
 -----------------------------------------------
 -- CAR TELEPORT SYSTEM
 -----------------------------------------------
-local STEP_SIZE = 900
+local STEP_SIZE = 1000
 local HEIGHT_ABOVE_GROUND = 8
 local WAIT_BETWEEN_JUMPS = 2
+
+local function FreezeVehicle(vehicle)
+    for _, part in ipairs(vehicle:GetDescendants()) do
+        if part:IsA("BasePart") then
+            part.Anchored = true
+        end
+    end
+end
+
+local function UnfreezeVehicle(vehicle)
+    for _, part in ipairs(vehicle:GetDescendants()) do
+        if part:IsA("BasePart") then
+            part.Anchored = false
+        end
+    end
+end
 
 local function getOwnedVehicle()
 	local vehicles = workspace:FindFirstChild("Vehicles")
@@ -360,6 +376,8 @@ local function CarTeleport(target)
 		return
 	end
 
+	FreezeVehicle(vehicle)
+	UnfreezeVehicle(vehicle)
 	TeleportCancelled = false
 
 	task.spawn(function()
