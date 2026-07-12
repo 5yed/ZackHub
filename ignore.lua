@@ -976,7 +976,7 @@ local SettingsSection = Autofarm:CreateSection("Teleport Settings")
 
 Autofarm:CreateSlider({
 	Name = "Step Size",
-	Range = {100,10000},
+	Range = {100,2000},
 	Increment = 100,
 	Suffix = " studs",
 	CurrentValue = STEP_SIZE,
@@ -988,7 +988,7 @@ Autofarm:CreateSlider({
 
 Autofarm:CreateSlider({
 	Name = "Height Above Ground",
-	Range = {1,50},
+	Range = {1,30},
 	Increment = 1,
 	Suffix = " studs",
 	CurrentValue = HEIGHT_ABOVE_GROUND,
