@@ -45,6 +45,8 @@ local Window = Library:CreateWindow({
 -----------------------------------------------
 -- FUNCTIONS
 -----------------------------------------------
+
+-- REFUEL FUNCTION
 local function AutoRefuelFunction(Value)
     if not Value then
         return
@@ -72,6 +74,7 @@ local function AutoRefuelFunction(Value)
     end
 end
 
+-- BETTER GATES FUNCTION
 local BetterGatesApplied = false
 
 local function BetterGatesFunction()
@@ -95,9 +98,6 @@ local function BetterGatesFunction()
 	for _, gate in ipairs(gatesFolder:GetChildren()) do
 		if gate.Name == "Gate" then
 
-			--------------------------------------------------
-			-- Trigger
-			--------------------------------------------------
 			local triggerResult = pcall(function()
 				local trigger = gate:FindFirstChild("Trigger")
 
@@ -114,10 +114,6 @@ local function BetterGatesFunction()
 				triggerFail += 1
 			end
 
-
-			--------------------------------------------------
-			-- Prompts
-			--------------------------------------------------
 			local hasPrompt = false
 
 			local promptResult = pcall(function()
@@ -139,10 +135,6 @@ local function BetterGatesFunction()
 				promptFail += 1
 			end
 
-
-			--------------------------------------------------
-			-- Highlight ONLY Gates With Prompts
-			--------------------------------------------------
 			if hasPrompt then
 				local highlightResult = pcall(function()
 					if not gate:FindFirstChild("GateHighlight") then
@@ -168,11 +160,6 @@ local function BetterGatesFunction()
 		end
 	end
 
-
-	--------------------------------------------------
-	-- Notifications
-	--------------------------------------------------
-
 	Library:Notify({
 		Title = "Trigger Results",
 		Content = string.format(
@@ -183,7 +170,6 @@ local function BetterGatesFunction()
 		Duration = 6.5,
 		Image = 4483362458,
 	})
-
 
 	Library:Notify({
 		Title = "Prompt Results",
@@ -196,7 +182,6 @@ local function BetterGatesFunction()
 		Image = 4483362458,
 	})
 
-
 	Library:Notify({
 		Title = "Highlight Results",
 		Content = string.format(
@@ -208,7 +193,6 @@ local function BetterGatesFunction()
 		Image = 4483362458,
 	})
 
-
 	BetterGatesApplied = true
 
 	Library:Notify({
@@ -219,6 +203,7 @@ local function BetterGatesFunction()
 	})
 end
 
+-- INIFINITE YIELD FUNCTION
 local InfiniteYieldLoaded = false
 
 local function InfiniteYieldFunction()
@@ -247,28 +232,40 @@ local function InfiniteYieldFunction()
 end
 
 -----------------------------------------------
--- CAR TELEPORT SYSTEM
+-- GROUP SYSTEM
 -----------------------------------------------
 
-local STEP_SIZE = 900
-local HEIGHT_ABOVE_GROUND = 8
-local WAIT_BETWEEN_JUMPS = 2
+local Group1Side = Vector3.new(6716.88, 17.05, 142.88)
+local Group2Side = Vector3.new(-132.61, 17.05, 142.77)
 
 local Locations = {
+	-- Group 2
 	["Smuggler 1"] = CFrame.new(-201.39, 17.01, 1244.04),
 	["Smuggler 2"] = CFrame.new(208.26, 17.07, -46.06),
 	["Jewelry"] = CFrame.new(-75.03, 18.45, 926.13),
 	["Bank"] = CFrame.new(-286.19, 17.05, -252.29),
 	["Safe Spot"] = CFrame.new(-200.45, 132.86, 230.38),
 
+	-- Group 1
 	["Buy Jewelry"] = CFrame.new(6821.61, 17.24, 22.11),
 	["Launder"] = CFrame.new(6809.25, 17.27, -34.69),
 	["Buy Crowbar"] = CFrame.new(6806.12, 17.24, -7.75),
 }
 
+local Group1Set = {
+	["Buy Jewelry"] = true,
+	["Launder"] = true,
+	["Buy Crowbar"] = true,
+}
+
+-----------------------------------------------
+-- CAR TELEPORT SYSTEM
+-----------------------------------------------
+local STEP_SIZE = 900
+local HEIGHT_ABOVE_GROUND = 8
+local WAIT_BETWEEN_JUMPS = 2
 
 local function getOwnedVehicle()
-
 	local vehicles = workspace:FindFirstChild("Vehicles")
 
 	if not vehicles then
@@ -284,7 +281,6 @@ end
 
 
 local function getGroundPosition(position, ignore)
-
 	local params = RaycastParams.new()
 	params.FilterType = Enum.RaycastFilterType.Blacklist
 	params.FilterDescendantsInstances = {ignore}
@@ -306,9 +302,7 @@ local function getGroundPosition(position, ignore)
 	return position + Vector3.new(0,HEIGHT_ABOVE_GROUND,0)
 end
 
-
 local function CarTeleport(target)
-
 	local vehicle = getOwnedVehicle()
 
 	if not vehicle then
@@ -321,16 +315,20 @@ local function CarTeleport(target)
 		return
 	end
 
-
 	TeleportCancelled = false
-
 
 	task.spawn(function()
 
 		while true do
-
 			if TeleportCancelled then
 				local current = vehicle:GetPivot().Position
+				if not vehicle or not vehicle.Parent then
+					return "FAILED"
+				end
+
+				if vehicle:GetAttribute("CurrentFuel") <= 0 then
+					return "FAILED"
+				end
 				local safe = getGroundPosition(current, vehicle)
 
 				vehicle:PivotTo(CFrame.new(safe))
@@ -338,29 +336,40 @@ local function CarTeleport(target)
 				return
 			end
 
-
 			local current = vehicle:GetPivot().Position
 			local destination = target.Position
 
 			local offset = destination - current
 			local distance = offset.Magnitude
 
-
 			if distance <= STEP_SIZE then
-
 				local final = getGroundPosition(destination, vehicle)
 				vehicle:PivotTo(CFrame.new(final))
-
 				return
 			end
-
 
 			local nextPosition = current + offset.Unit * STEP_SIZE
 			nextPosition = getGroundPosition(nextPosition, vehicle)
 
 			vehicle:PivotTo(CFrame.new(nextPosition))
 
+			if not LastVehiclePos then
+				LastVehiclePos = vehicle:GetPivot().Position
+				StuckTime = 0
+			end
 
+			local moved = (vehicle:GetPivot().Position - LastVehiclePos).Magnitude
+
+			if moved < 2 then
+				StuckTime += WAIT_BETWEEN_JUMPS
+			else
+				LastVehiclePos = vehicle:GetPivot().Position
+				StuckTime = 0
+			end
+
+			if StuckTime >= 8 then
+				return "FAILED"
+			end
 			task.wait(WAIT_BETWEEN_JUMPS)
 
 		end
@@ -369,47 +378,111 @@ local function CarTeleport(target)
 end
 
 -----------------------------------------------
+-- PLAYER MOVEMENT SYSTEM
+-----------------------------------------------
+local function moveTo(pos)
+	local root = getRoot()
+
+	while not cancelTeleport do
+		local delta = pos - root.Position
+		local dist = delta.Magnitude
+
+		if dist < 3 then
+			break
+		end
+
+		root.CFrame = CFrame.new(root.Position + delta.Unit * math.min(1.5, dist))
+		RunService.Heartbeat:Wait()
+	end
+end
+
+-- HIGHWAY ROUTE
+local function isInGroup1(pos)
+	return pos.X > 3000
+end
+
+local function travel(targetName, targetCF)
+	if isTeleporting then return end
+	isTeleporting = true
+	cancelTeleport = false
+
+	local root = getRoot()
+	local targetPos = targetCF.Position
+
+	local inGroup1 = isInGroup1(root.Position)
+	local targetGroup1 = Group1Set[targetName] == true
+
+	-- CASE 1: Already in correct group → SKIP HIGHWAY
+	if inGroup1 == targetGroup1 then
+		moveTo(targetPos)
+		isTeleporting = false
+		return
+	end
+
+	-- CASE 2: Wrong group → use highway
+	if inGroup1 then
+		moveTo(Group1Side)
+	else
+		moveTo(Group2Side)
+	end
+
+	if inGroup1 then
+		moveTo(Group2Side)
+	else
+		moveTo(Group1Side)
+	end
+
+	moveTo(targetPos)
+
+	isTeleporting = false
+end
+
+-----------------------------------------------
 -- AUTO GRINDER SYSTEM
 -----------------------------------------------
-
 local AutoGrinderRunning = false
 local AutoGrinderThread = nil
 local TeleportCancelled = false
-
+LastVehiclePos = nil
+StuckTime = 0
 
 local GrinderRoute = {
-	Locations["Buy Jewelry"],
-	Locations["Smuggler 1"],
-	Locations["Launder"]
+    {
+        Name = "Buy Jewelry",
+        CF = Locations["Buy Jewelry"]
+    },
+    {
+        Name = "Smuggler 1",
+        CF = Locations["Smuggler 1"]
+    },
+    {
+        Name = "Launder",
+        CF = Locations["Launder"]
+    }
 }
 
 
 local function StopAutoGrinder()
-
 	AutoGrinderRunning = false
 
 	-- Stop active teleport immediately
 	TeleportCancelled = true
-
 
 	if AutoGrinderThread then
 		task.cancel(AutoGrinderThread)
 		AutoGrinderThread = nil
 	end
 
-
 	-- Put car safely above ground
 	local vehicle = getOwnedVehicle()
 
 	if vehicle then
-
 		local current = vehicle:GetPivot().Position
 		local safePosition = getGroundPosition(current, vehicle)
 
 		vehicle:PivotTo(CFrame.new(safePosition))
 
 	end
-
 
 	Library:Notify({
 		Title = "Auto Grinder",
@@ -432,9 +505,7 @@ local function AutoGrinderFunction(Value)
 		return
 	end
 
-
 	AutoGrinderRunning = true
-
 
 	AutoGrinderThread = task.spawn(function()
 
@@ -447,14 +518,21 @@ local function AutoGrinderFunction(Value)
 
 		while AutoGrinderRunning do
 
-			for _, location in ipairs(GrinderRoute) do
+			for _, target in ipairs(GrinderRoute) do
+
+				CurrentTarget = target.CF
+				CurrentName = target.Name
 
 				if not AutoGrinderRunning then
 					break
 				end
 
 
-				CarTeleport(location)
+				local result = CarTeleport(target.CF)
+
+				if result == "FAILED" then
+					travel(target.Name, target.CF)
+				end
 
 
 				-- Allow teleport to complete
@@ -466,14 +544,14 @@ local function AutoGrinderFunction(Value)
 						task.wait(0.25)
 
 						local distance =
-							(vehicle:GetPivot().Position - location.Position).Magnitude
+							(vehicle:GetPivot().Position - target.CF.Position).Magnitude
 
 					until distance < 10 or not AutoGrinderRunning
 
 				-- Give the car a moment to settle near the prompt
 				task.wait(1)
 				
-				if location == Locations["Buy Jewelry"] then
+				if target.Name == "Buy Jewelry" then
 					local prompt = workspace.WorldBuyableItems["Fake Diamond Ring"].Handle.PromptAttachment.ProximityPrompt
 				
 					for i = 1, 5 do
@@ -481,28 +559,70 @@ local function AutoGrinderFunction(Value)
 						task.wait(0.2)
 					end
 				
-				elseif location == Locations["Smuggler 1"] then
+				elseif target.Name == "Smuggler 1" then
 					local prompt = workspace.NPC.Seller3.HumanoidRootPart.SellSmuggledGoodsPrompt
 					fireproximityprompt(prompt)
 					task.wait(1)
 				
-				elseif location == Locations["Launder"] then
+				elseif target.Name == "Launder" then
 					local prompt = workspace.LaunderPrompts.LaunderTrigger.PromptPart.LaunderBriefcasePrompt
 					fireproximityprompt(prompt)
 					task.wait(1)
 				end
-
 				end
-
 			end
-
 		end
 
-
 		AutoGrinderThread = nil
-
 	end)
+end
 
+-----------------------------------------------
+-- BOX JOB
+-----------------------------------------------
+local BoxJobEnabled = false
+local BoxJobThread
+
+local function RunBoxJob(Value)
+    BoxJobEnabled = Value
+
+    if not BoxJobEnabled then
+        return
+    end
+
+    if BoxJobThread then
+        return
+    end
+
+    BoxJobThread = task.spawn(function()
+        local player = game:GetService("Players").LocalPlayer
+
+        while BoxJobEnabled do
+            local character = player.Character or player.CharacterAdded:Wait()
+            local hrp = character:WaitForChild("HumanoidRootPart")
+
+            local FetchPrompt = workspace.BoxJob.PromptParts.FetchPromptPart.BoxFetchPrompt
+            local DeliverPrompt = workspace.BoxJob.PromptParts.DeliverPromptPart.BoxDeliverPrompt
+
+            FetchPrompt.HoldDuration = 0
+            FetchPrompt.MaxActivationDistance = 100
+
+            DeliverPrompt.HoldDuration = 0
+            DeliverPrompt.MaxActivationDistance = 100
+
+            hrp.CFrame = CFrame.new(-15, 18.095733642578125, -70)
+            task.wait(0.4)
+            fireproximityprompt(FetchPrompt)
+
+            hrp.CFrame = CFrame.new(5, 16.463029861450195, -55)
+            task.wait(0.4)
+            fireproximityprompt(DeliverPrompt)
+
+            task.wait(0.1)
+        end
+
+        BoxJobThread = nil
+    end)
 end
 
 --------------------------------------------------
@@ -557,6 +677,13 @@ local function RemoveBorderLimits()
 			scan()
 		end
 	end)
+
+	Library:Notify({
+		Title = "Border Limits & Parking Restrictors",
+		Content = "Successfully Removed.",
+		Duration = 6.5,
+		Image = 4483362458,
+	})
 end
 
 local LowLagApplied = false
@@ -679,7 +806,7 @@ Library:Notify({
 local Autofarm = Window:CreateTab("Autofarm", 4483362458)
 
 -----------------------------------------------
--- AUTO GRINDER
+-- AUTO GRINDER SECTION
 -----------------------------------------------
 local GrinderSection = Autofarm:CreateSection("Auto Grinder")
 
@@ -692,9 +819,15 @@ Autofarm:CreateToggle({
 	end
 })
 
------------------------------------------------
--- TELEPORT SETTINGS
------------------------------------------------
+Autofarm:CreateToggle({
+    Name = "Farm Box Job",
+    CurrentValue = false,
+    Flag = "BoxFarm",
+    Callback = function(Value)
+        RunBoxJob(Value)
+    end
+})
+
 local SettingsSection = Autofarm:CreateSection("Teleport Settings")
 
 Autofarm:CreateSlider({
@@ -734,10 +867,6 @@ Autofarm:CreateSlider({
 		WAIT_BETWEEN_JUMPS = Value
 	end,
 })
-
------------------------------------------------
--- CAR TELEPORT BUTTONS
------------------------------------------------
 
 local TeleportSection = Autofarm:CreateSection("Teleport Locations")
 for name, location in pairs(Locations) do
