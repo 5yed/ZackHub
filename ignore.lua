@@ -20,12 +20,11 @@ end
 
 if isWhitelisted then
 	Library:Notify({
-			Title = "ZackHub",
-			Content = "Whitelisted",
-			Duration = 6.5,
-			Image = 4483362458,
-		})
-    return
+        Title = "ZackHub",
+        Content = "Whitelisted",
+        Duration = 6.5,
+        Image = 4483362458,
+    })
 else
     player:Kick("You are not whitelisted to use this script.")
 end
