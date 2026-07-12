@@ -74,33 +74,49 @@ local Window = Library:CreateWindow({
 -----------------------------------------------
 -- FUNCTIONS
 -----------------------------------------------
+local AutoRefuelEnabled = false
+local AutoRefuelThread
 
--- REFUEL FUNCTION
 local function AutoRefuelFunction(Value)
+    AutoRefuelEnabled = Value
+
     if not Value then
         return
     end
 
-    local userId = game.Players.LocalPlayer.UserId
-    local found = false
+    if AutoRefuelThread then
+        return
+    end
 
-    for _, vehicle in ipairs(workspace.Vehicles:GetChildren()) do
-        if vehicle:GetAttribute("OwnerUserId") == userId then
-            found = true
+    AutoRefuelThread = task.spawn(function()
+        local userId = game.Players.LocalPlayer.UserId
 
-            local fuel = vehicle:GetAttribute("CurrentFuel")
+        while AutoRefuelEnabled do
+            local found = false
 
-            if fuel and fuel <= 0 then
-                vehicle:SetAttribute("CurrentFuel", 100)
+            for _, vehicle in ipairs(workspace.Vehicles:GetChildren()) do
+                if vehicle:GetAttribute("OwnerUserId") == userId then
+                    found = true
+
+                    local fuel = vehicle:GetAttribute("CurrentFuel")
+
+                    if fuel and fuel <= 0 then
+                        vehicle:SetAttribute("CurrentFuel", 100)
+                    end
+
+                    break
+                end
             end
 
-            break
-        end
-    end
+            if not found then
+                warn("No vehicle found for UserId:", userId)
+            end
 
-    if not found then
-        warn("No vehicle found for UserId:", userId)
-    end
+            task.wait(0.2) -- Check 5 times per second
+        end
+
+        AutoRefuelThread = nil
+    end)
 end
 
 -- BETTER GATES FUNCTION
@@ -642,12 +658,13 @@ local function RunBoxJob(Value)
             hrp.CFrame = CFrame.new(-15, 18.095733642578125, -70)
             task.wait(0.4)
             fireproximityprompt(FetchPrompt)
+			task.wait(0.4)
 
             hrp.CFrame = CFrame.new(5, 16.463029861450195, -55)
             task.wait(0.4)
             fireproximityprompt(DeliverPrompt)
 
-            task.wait(0.1)
+            task.wait(0.4)
         end
 
         BoxJobThread = nil
@@ -715,7 +732,40 @@ local function RemoveBorderLimits()
 	})
 end
 
-local LowLagApplied = false
+-----------------------------------------------
+-- ANTI AFK
+-----------------------------------------------
+local Players = game:GetService("Players")
+local VirtualUser = game:GetService("VirtualUser")
+
+local AntiAfkEnabled = false
+local AntiAfkConnection
+
+local function EnableAntiAfk()
+	if AntiAfkEnabled then
+		return
+	end
+
+	AntiAfkEnabled = true
+
+	AntiAfkConnection = Players.LocalPlayer.Idled:Connect(function()
+		VirtualUser:CaptureController()
+		VirtualUser:ClickButton2(Vector2.new())
+	end)
+
+	Library:Notify({
+		Title = "Anti AFK",
+		Content = "Enabled.",
+		Duration = 5,
+		Image = 4483362458,
+	})
+end
+
+-----------------------------------------------
+-- FARMING ENVIRONMENT
+-----------------------------------------------
+local FarmEnviroment = false
+local WheelDeletionEnabled = false
 local VehicleWatcherConnection
 
 local function removeVehicleWheels(vehicle)
@@ -729,15 +779,56 @@ local function removeVehicleWheels(vehicle)
 	end
 end
 
-local function LowLagFunction()
-	if LowLagApplied then
+local function ToggleWheelDeletion(enabled)
+	WheelDeletionEnabled = enabled
+
+	local vehicles = workspace:WaitForChild("Vehicles")
+
+	if enabled then
+		-- Remove wheels from existing vehicles
+		for _, vehicle in ipairs(vehicles:GetChildren()) do
+			removeVehicleWheels(vehicle)
+		end
+
+		-- Remove wheels from future vehicles
+		if not VehicleWatcherConnection then
+			VehicleWatcherConnection = vehicles.ChildAdded:Connect(function(vehicle)
+				task.wait(0.5)
+
+				if WheelDeletionEnabled then
+					removeVehicleWheels(vehicle)
+				end
+			end)
+		end
+
+		Library:Notify({
+			Title = "Wheel Deletion",
+			Content = "Enabled.",
+			Duration = 5,
+			Image = 4483362458,
+		})
+	else
+		Library:Notify({
+			Title = "Wheel Deletion",
+			Content = "Disabled. Existing vehicles remain unchanged.",
+			Duration = 5,
+			Image = 4483362458,
+		})
+	end
+end
+
+local function FarmEnviromentFunction()
+	if FarmEnviroment then
 		return
 	end
-	LowLagApplied = true
-    for i = 1, 3 do
-        game.Players.LocalPlayer.Character:PivotTo(Locations["Smuggler 1"])
-        task.wait(0.5)
-    end
+	FarmEnviroment = true
+
+	if not workspace.NPC:FindFirstChild("Seller3") then
+		for i = 1, 2 do
+			game.Players.LocalPlayer.Character:PivotTo(Locations["Smuggler 1"])
+			task.wait(0.5)
+		end
+	end
 
 	-- Remove textures and decals
 	for _, obj in ipairs(workspace:GetDescendants()) do
@@ -757,6 +848,14 @@ local function LowLagFunction()
 		local obj = workspace:FindFirstChild(name)
 		if obj then
 			obj:Destroy()
+		end
+	end
+
+	local map = workspace:FindFirstChild("Map")
+	if map then
+		local ezMart = map:FindFirstChild("EZMart")
+		if ezMart then
+			ezMart:Destroy()
 		end
 	end
 
@@ -803,40 +902,28 @@ local function LowLagFunction()
 		removeVehicleWheels(vehicle)
 	end
 
-	-- Remove wheels from future vehicles
-	if not VehicleWatcherConnection then
-		VehicleWatcherConnection = vehicles.ChildAdded:Connect(function(vehicle)
-			task.wait(0.5)
-			removeVehicleWheels(vehicle)
-		end)
-	end
-
 	Library:Notify({
-		Title = "Low Lag",
-		Content = "Low lag mode applied.",
+		Title = "Farming Environment",
+		Content = "This session has been adjusted for Farming. Rejoin if you wish to play normally.",
 		Duration = 5,
 		Image = 4483362458,
 	})
 end
 -----------------------------------------------
--- UI SETUP
+-- MAIN UI SETUP
 -----------------------------------------------
 Library:Notify({
    Title = "ZachHub",
-   Content = "Use 'Z' to hide/unhide the UI.",
+   Content = "Use 'P' to hide/unhide the UI.",
    Duration = 5,
    Image = 4483362458,
 })
 
 -----------------------------------------------
--- AUTOFARM SECTION
+-- AUTOFARM UI SECTION
 -----------------------------------------------
 
 local Autofarm = Window:CreateTab("Autofarm", 4483362458)
-
------------------------------------------------
--- AUTO GRINDER SECTION
------------------------------------------------
 local GrinderSection = Autofarm:CreateSection("Auto Grinder")
 
 Autofarm:CreateToggle({
@@ -857,6 +944,16 @@ Autofarm:CreateToggle({
     end
 })
 
+local FarmEnvironment = Autofarm:CreateButton({
+    Name = "Enable Farming Environment (Irreversible)",
+    Callback = function()
+        FarmEnviromentFunction()
+        RemoveBorderLimits()
+        DestroyBlackMarket()
+		EnableAntiAfk()
+    end,
+})
+
 local SettingsSection = Autofarm:CreateSection("Teleport Settings")
 
 Autofarm:CreateSlider({
@@ -871,7 +968,6 @@ Autofarm:CreateSlider({
 	end,
 })
 
-
 Autofarm:CreateSlider({
 	Name = "Height Above Ground",
 	Range = {1,50},
@@ -883,7 +979,6 @@ Autofarm:CreateSlider({
 		HEIGHT_ABOVE_GROUND = Value
 	end,
 })
-
 
 Autofarm:CreateSlider({
 	Name = "Wait Between Jumps",
@@ -910,7 +1005,7 @@ for name, location in pairs(Locations) do
 end
 
 -----------------------------------------------
--- MISC SECTION
+-- MISC UI SECTION
 -----------------------------------------------
 local Misc = Window:CreateTab("Misc", 4483362458)
 local AutoRefuel = Misc:CreateToggle({
@@ -920,6 +1015,15 @@ local AutoRefuel = Misc:CreateToggle({
    Callback = function(Value)
         AutoRefuelFunction(Value)
     end
+})
+
+local WheelDeletion = Misc:CreateToggle({
+	Name = "Delete Vehicle Wheels On Spawn",
+	CurrentValue = false,
+	Flag = "DeleteVehicleWheels",
+	Callback = function(Value)
+		ToggleWheelDeletion(Value)
+	end,
 })
 
 local DestroyBlack = Misc:CreateButton({
@@ -953,6 +1057,6 @@ local DestoryBorderLimitations = Misc:CreateButton({
 local LowLagButton = Misc:CreateButton({
 	Name = "Low Lag",
 	Callback = function()
-		LowLagFunction()
+		FarmEnviromentFunction()
 	end,
 })
