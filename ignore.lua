@@ -306,9 +306,9 @@ local Group1Set = {
 -----------------------------------------------
 -- CAR TELEPORT SYSTEM
 -----------------------------------------------
-local STEP_SIZE = 200
+local STEP_SIZE = 800
 local HEIGHT_ABOVE_GROUND = 2
-local WAIT_BETWEEN_JUMPS = 0.5
+local WAIT_BETWEEN_JUMPS = 2
 
 local function FreezeVehicle(vehicle)
     for _, part in ipairs(vehicle:GetDescendants()) do
@@ -977,7 +977,7 @@ local SettingsSection = Autofarm:CreateSection("Teleport Settings")
 Autofarm:CreateSlider({
 	Name = "Step Size",
 	Range = {100,2000},
-	Increment = 100,
+	Increment = 10,
 	Suffix = " studs",
 	CurrentValue = STEP_SIZE,
 	Flag = "StepSize",
