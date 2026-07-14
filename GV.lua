@@ -319,33 +319,35 @@ local function triggerCarPrompt()
 
 end
 
-local function hoverOverPad(pad)
+local function hoverOverPad()
 
-	local part
+	local camera = workspace.CurrentCamera
 
-	if pad:IsA("BasePart") then
-		part = pad
-	elseif pad:IsA("Model") then
-		part = pad.PrimaryPart
-	end
+	-- use player's body position instead of pad position
+	local screenPos, visible = camera:WorldToViewportPoint(
+		hrp.Position - Vector3.new(0, 2.5, 0) -- around feet/legs
+	)
 
-	if not part then
-		warn("No part to hover")
-		return
-	end
+	print(
+		"Player screen position:",
+		screenPos.X,
+		screenPos.Y,
+		"Visible:",
+		visible
+	)
 
-	local screenPos, visible = camera:WorldToViewportPoint(part.Position)
+	if visible and screenPos.Z > 0 then
 
-	if visible then
 		VirtualInputManager:SendMouseMoveEvent(
 			screenPos.X,
 			screenPos.Y,
 			game
 		)
 
-		print("Mouse moved over pad")
+		print("Mouse moved to player's feet")
+
 	else
-		warn("Pad not visible")
+		warn("Player not visible on screen")
 	end
 end
 
@@ -419,8 +421,6 @@ local function enablePadPrompts()
 	end
 end
 
-
-
 -- Teleport above pad
 local function teleportToPad(index)
 
@@ -452,20 +452,6 @@ local function teleportToPad(index)
 	end
 
 	return false
-end
-
-local function continueAfterDelivery()
-
-	if not currentPadObject then
-		return
-	end
-
-	teleportToPad(currentPad)
-
-	task.wait(1)
-
-	hoverOverPad(currentPadObject)
-
 end
 
 -- Main process
@@ -541,7 +527,7 @@ local function startProcess()
 
 				clickButton(button)
 
-				task.wait(.05)
+				task.wait(.01)
 
 			end
 
@@ -594,12 +580,12 @@ local function startProcess()
 
 	enablePadPrompts()
 
-    currentPad = 1
+    for i = 1, #boxPads do
 
-    currentPadObject = boxPads[currentPad]
+        currentPad = i
+        currentPadObject = boxPads[i]
 
-
-    if teleportToPad(currentPad) then
+        teleportToPad(i)
 
         task.wait(1)
 
@@ -619,7 +605,30 @@ local function startProcess()
 
         task.wait(1)
 
-        continueAfterDelivery()
+        -- return to the exact same pad
+        local pad = currentPadObject
+
+        local cf
+        if pad:IsA("BasePart") then
+            cf = pad.CFrame
+        elseif pad:IsA("Model") then
+            cf = pad:GetPivot()
+        end
+
+        if cf then
+            hrp.CFrame =
+                cf
+                * CFrame.new(0, 8, 0)
+                * CFrame.Angles(0, math.rad(-90), 0)
+        end
+
+        task.wait(1)
+
+        camera.CameraType = Enum.CameraType.Custom
+
+        task.wait(1)
+
+        hoverOverPad()
 
     end
 
