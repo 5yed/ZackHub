@@ -71,100 +71,63 @@ local function clickButton(button)
 end
 
 local function carspawner()
+    local playerGui = player:WaitForChild("PlayerGui")
 
-	local Players = game:GetService("Players")
-	local VirtualInputManager = game:GetService("VirtualInputManager")
+    local garage = playerGui.UI.Uni.Interfaces.Garage
+    local carsList = garage.JobCars.CarsList
 
-	local player = Players.LocalPlayer
-	local playerGui = player:WaitForChild("PlayerGui")
+    local jobCar
 
-	local garage = playerGui.UI.Uni.Interfaces.Garage
-	local jobCar = garage.JobCars.CarsList.JobCar4548
+    -- Find the first available job car button
+    for _, obj in ipairs(carsList:GetChildren()) do
+        if obj:IsA("GuiButton") or obj:IsA("ImageButton") or obj:IsA("TextButton") then
+            jobCar = obj
+            break
+        end
+    end
 
+    if not jobCar then
+        warn("No job car found.")
+        return
+    end
 
-	if garage:IsA("ScreenGui") then
-		garage.Enabled = true
-	elseif garage:IsA("GuiObject") then
-		garage.Visible = true
-	end
+    if garage:IsA("ScreenGui") then
+        garage.Enabled = true
+    else
+        garage.Visible = true
+    end
 
+    task.wait(1)
 
-	task.wait(1)
+    clickButton(jobCar)
 
+    task.wait(1)
 
-	local pos = jobCar.AbsolutePosition
-	local size = jobCar.AbsoluteSize
-
-	local x = pos.X + (size.X / 2)
-	local y = pos.Y + (size.Y / 2)
-
-
-	VirtualInputManager:SendMouseMoveEvent(
-		x,
-		y,
-		game
-	)
-
-	task.wait(0.2)
-
-
-	VirtualInputManager:SendMouseButtonEvent(
-		x,
-		y,
-		0,
-		true,
-		game,
-		1
-	)
-
-	task.wait(0.1)
-
-	VirtualInputManager:SendMouseButtonEvent(
-		x,
-		y,
-		0,
-		false,
-		game,
-		1
-	)
-
-
-	task.wait(1)
-
-
-	if garage:IsA("ScreenGui") then
-		garage.Enabled = false
-	elseif garage:IsA("GuiObject") then
-		garage.Visible = false
-	end
-
+    if garage:IsA("ScreenGui") then
+        garage.Enabled = false
+    else
+        garage.Visible = false
+    end
 end
 
 local function enableCarPrompt()
+    local carFolder = workspace:WaitForChild("SessionVehicles")
 
-	local carFolder = workspace:WaitForChild("SessionVehicles")
+    local carName = player.Name .. "-Car"
 
-	local car
+    local car = carFolder:WaitForChild(carName)
 
-	repeat
-		car = carFolder:FindFirstChild("Ppulseryn333-Car")
-		task.wait(0.2)
-	until car
+    local prompt = car:WaitForChild("ProximityPrompt", 10)
 
+    if not prompt then
+        prompt = car:FindFirstChildWhichIsA("ProximityPrompt", true)
+    end
 
-	local prompt
-
-	repeat
-
-		prompt = car:FindFirstChild("ProximityPrompt", true)
-
-		task.wait(0.2)
-
-	until prompt
-
-
-	prompt.MaxActivationDistance = 20
-
+    if prompt then
+        prompt.MaxActivationDistance = 20
+    else
+        warn("No ProximityPrompt found in car.")
+    end
 end
 
 local function facePrompt(prompt)
@@ -284,7 +247,14 @@ end
 
 local function triggerCarPrompt()
 
-	local car = workspace.SessionVehicles:WaitForChild("Ppulseryn333-Car")
+	local carName = player.Name .. "-Car"
+
+    local car = workspace.SessionVehicles:WaitForChild(carName, 10)
+
+    if not car then
+        warn("Couldn't find spawned car:", carName)
+        return
+    end
 
 	local prompt
 
