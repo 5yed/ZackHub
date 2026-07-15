@@ -556,3 +556,5 @@ Autofarm:CreateToggle({
 		runToggle(Value)
 	end
 })
+
+local Paragraph = Autofarm:CreateParagraph({Title = "NOTE", Content = "Make sure you change your team to Sahara Delivery Driver before toggling the script."})
