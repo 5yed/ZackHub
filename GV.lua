@@ -1,136 +1,247 @@
-local Players = game:GetService("Players")
-local VirtualInputManager = game:GetService("VirtualInputManager")
+------------------------------------
+-- LIBRARY SETUP & WHITELIST CHECK
+------------------------------------
 
-local currentPadObject = nil
-local camera = workspace.CurrentCamera
+local Library = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
-local player = Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
-local hrp = character:WaitForChild("HumanoidRootPart")
+local url = "https://raw.githubusercontent.com/5yed/ZackHub/refs/heads/main/Whitelist"
+local content = game:HttpGet(url)
 
-local boxPads = {}
-local currentPad = 0
-local started = false
+local player = game.Players.LocalPlayer
+local isWhitelisted = false
 
+for line in content:gmatch("[^\r\n]+") do
+    local userId, enabled = line:match("^(%d+), (%a+)$")
 
--- GUI
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "BoxPadGUI"
-screenGui.Parent = player.PlayerGui
+    if tonumber(userId) == player.UserId then
+        isWhitelisted = enabled:lower() == "true"
+        break
+    end
+end
 
+if isWhitelisted then
+	Library:Notify({
+        Title = "ZackHub",
+        Content = "Whitelisted",
+        Duration = 6.5,
+        Image = 4483362458,
+    })
+else
+    player:Kick("You are not whitelisted to use this script.")
+end
 
-local startButton = Instance.new("TextButton")
-startButton.Size = UDim2.new(0, 150, 0, 50)
-startButton.Position = UDim2.new(0, 20, 0, 100)
-startButton.Text = "Start"
-startButton.Parent = screenGui
+------------------------------------
+-- WINDOW SETUP
+------------------------------------
 
-local function clickButton(button)
+local Window = Library:CreateWindow({
+   Name = "ZackHub",
+   Icon = 0, -- Icon in Topbar. Can use Lucide Icons (string) or Roblox Image (number). 0 to use no icon (default).
+   LoadingTitle = "ZackHub Interface Suite",
+   LoadingSubtitle = "by 5yed.A",
+   ShowText = "ZackHub", -- for mobile users to unhide Rayfield, change if you'd like
+   Theme = "DarkBlue", -- Check https://docs.sirius.menu/rayfield/configuration/themes
 
-	print("Clicking:", button:GetFullName())
+   ToggleUIKeybind = "P", -- The keybind to toggle the UI visibility (string like "K" or Enum.KeyCode)
 
-	local pos = button.AbsolutePosition
-	local size = button.AbsoluteSize
+   DisableRayfieldPrompts = false,
+   DisableBuildWarnings = false, -- Prevents Rayfield from emitting warnings when the script has a version mismatch with the interface.
+
+   -- ScriptID = "sid_xxxxxxxxxxxx", -- Your Script ID from developer.sirius.menu — enables analytics, managed keys, and script hosting
+
+   ConfigurationSaving = {
+      Enabled = false,
+      FolderName = nil, -- Create a custom folder for your hub/game
+      FileName = "Zack Hub"
+   },
+
+   Discord = {
+      Enabled = false, -- Prompt the user to join your Discord server if their executor supports it
+      Invite = "noinvitelink", -- The Discord invite code, do not include Discord.gg/. E.g. Discord.gg/ABCD would be ABCD
+      RememberJoins = true -- Set this to false to make them join the Discord every time they load it up
+   },
+
+   KeySystem = false, -- Set this to true to use our key system
+   KeySettings = {
+      Title = "Untitled",
+      Subtitle = "Key System",
+      Note = "No method of obtaining the key is provided", -- Use this to tell the user how to get a key
+      FileName = "Key", -- It is recommended to use something unique, as other scripts using Rayfield may overwrite your key file
+      SaveKey = true, -- The user's key will be saved, but if you change the key, they will be unable to use your script
+      GrabKeyFromSite = false, -- If this is true, set Key below to the RAW site you would like Rayfield to get the key from
+      Key = {"Hello"} -- List of keys that the system will accept, can be RAW file links (pastebin, github, etc.) or simple strings ("hello", "key22")
+   }
+})
+
+------------------------
+-- COMPLETE CHECKLIST
+------------------------
+
+local function completeChecklist()
+	local Players = game:GetService("Players")
+	local VirtualInputManager = game:GetService("VirtualInputManager")
+
+	local player = Players.LocalPlayer
+	local gui = player.PlayerGui
+
+	local conveyor = workspace.Buildings.AWAWAWAWA.SaharaInterior.Interior["Conveyor belt"]
+
+	local prompt
+	for _, obj in ipairs(conveyor:GetDescendants()) do
+		if obj:IsA("ProximityPrompt") then
+			prompt = obj
+			break
+		end
+	end
+
+	if not prompt then
+		warn("Couldn't find conveyor prompt.")
+		return false
+	end
+
+    prompt.RequiresLineOfSight = false
+	prompt.MaxActivationDistance = math.huge
+	task.wait(0.25)
+
+	prompt:InputHoldBegin()
+	task.wait(prompt.HoldDuration)
+	prompt:InputHoldEnd()
+
+	local checklist = gui.UI.Uni.Interfaces.AmazonChecklist
+	repeat
+		task.wait(0.2)
+	until checklist.Visible
+
+	local buttons = gui.UI.Uni.Interfaces.BoxDelivery:WaitForChild("Buttons")
+
+	local function clickButton(button)
+		local pos = button.AbsolutePosition
+		local size = button.AbsoluteSize
+
+		local x = pos.X + size.X/2
+		local y = pos.Y + size.Y/2
+
+		VirtualInputManager:SendMouseMoveEvent(x, y, game)
+		task.wait(0.05)
+		VirtualInputManager:SendMouseButtonEvent(x, y, 0, true, game, 1)
+		task.wait(0.05)
+		VirtualInputManager:SendMouseButtonEvent(x, y, 0, false, game, 1)
+	end
+
+	for _, item in ipairs(checklist.List:GetChildren()) do
+		local value = item:FindFirstChild("Value")
+		local amount = value and tonumber(value.Text)
+
+		if amount and amount > 0 then
+			local button = buttons:FindFirstChild(item.Name)
+
+			if button and button:IsA("ImageButton") then
+				for i = 1, amount do
+					clickButton(button)
+					task.wait(0.1)
+				end
+			else
+				warn("Couldn't find button:", item.Name)
+			end
+		end
+	end
+
+	return true
+end
+
+------------------------
+-- COLLECT BOX PADS
+------------------------
+
+local function collectBoxPads()
+	local boxPads = {}
+
+	for _, obj in ipairs(workspace:GetDescendants()) do
+		if obj.Name == "BoxPad" then
+			table.insert(boxPads, obj)
+
+			for _, descendant in ipairs(obj:GetDescendants()) do
+				if descendant:IsA("ProximityPrompt") then
+					descendant.MaxActivationDistance = math.huge
+					descendant.RequiresLineOfSight = false
+					descendant.HoldDuration = 0
+				end
+			end
+		end
+	end
+
+	return boxPads
+end
+
+------------------------
+-- SPAWN VEHICLE
+------------------------
+
+local function spawnVehicle()
+	local Players = game:GetService("Players")
+	local VirtualInputManager = game:GetService("VirtualInputManager")
+
+	local player = Players.LocalPlayer
+	local playerGui = player:WaitForChild("PlayerGui")
+
+	local garage = playerGui.UI.Uni.Interfaces.Garage
+	local jobCar = garage.JobCars.CarsList.JobCar4548
+
+	if garage:IsA("ScreenGui") then
+		garage.Enabled = true
+	elseif garage:IsA("GuiObject") then
+		garage.Visible = true
+	end
+
+	task.wait(1)
+
+	local pos = jobCar.AbsolutePosition
+	local size = jobCar.AbsoluteSize
 
 	local x = pos.X + size.X / 2
 	local y = pos.Y + size.Y / 2
 
-	print("Position:", x, y)
+	VirtualInputManager:SendMouseMoveEvent(x, y, game)
+	task.wait(0.2)
 
-
-	VirtualInputManager:SendMouseMoveEvent(
-		x,
-		y,
-		game
-	)
-
-	task.wait(0.3)
-
-
-	VirtualInputManager:SendMouseButtonEvent(
-		x,
-		y,
-		0,
-		true,
-		game,
-		1
-	)
-
+	VirtualInputManager:SendMouseButtonEvent(x, y, 0, true, game, 1)
 	task.wait(0.1)
+	VirtualInputManager:SendMouseButtonEvent(x, y, 0, false, game, 1)
 
+	task.wait(1)
 
-	VirtualInputManager:SendMouseButtonEvent(
-		x,
-		y,
-		0,
-		false,
-		game,
-		1
-	)
+	if garage:IsA("ScreenGui") then
+		garage.Enabled = false
+	elseif garage:IsA("GuiObject") then
+		garage.Visible = false
+	end
 
+	return true
 end
 
-local function carspawner()
-    local playerGui = player:WaitForChild("PlayerGui")
+------------------------
+-- ACTIVATE PAD
+------------------------
 
-    local garage = playerGui.UI.Uni.Interfaces.Garage
-    local carsList = garage.JobCars.CarsList
+local function activatePad(pad)
+	local Players = game:GetService("Players")
+	local UserInputService = game:GetService("UserInputService")
 
-    local jobCar
+	local player = Players.LocalPlayer
+	local character = player.Character or player.CharacterAdded:Wait()
+	local hrp = character:WaitForChild("HumanoidRootPart")
 
-    -- Find the first available job car button
-    for _, obj in ipairs(carsList:GetChildren()) do
-        if obj:IsA("GuiButton") or obj:IsA("ImageButton") or obj:IsA("TextButton") then
-            jobCar = obj
-            break
-        end
-    end
+	local prompt
+	for _, obj in ipairs(pad:GetDescendants()) do
+		if obj:IsA("ProximityPrompt") then
+			prompt = obj
+			break
+		end
+	end
 
-    if not jobCar then
-        warn("No job car found.")
-        return
-    end
-
-    if garage:IsA("ScreenGui") then
-        garage.Enabled = true
-    else
-        garage.Visible = true
-    end
-
-    task.wait(1)
-
-    clickButton(jobCar)
-
-    task.wait(1)
-
-    if garage:IsA("ScreenGui") then
-        garage.Enabled = false
-    else
-        garage.Visible = false
-    end
-end
-
-local function enableCarPrompt()
-    local carFolder = workspace:WaitForChild("SessionVehicles")
-
-    local carName = player.Name .. "-Car"
-
-    local car = carFolder:WaitForChild(carName)
-
-    local prompt = car:WaitForChild("ProximityPrompt", 10)
-
-    if not prompt then
-        prompt = car:FindFirstChildWhichIsA("ProximityPrompt", true)
-    end
-
-    if prompt then
-        prompt.MaxActivationDistance = 20
-    else
-        warn("No ProximityPrompt found in car.")
-    end
-end
-
-local function facePrompt(prompt)
+	if not prompt then
+		return false
+	end
 
 	local part = prompt.Parent
 
@@ -139,475 +250,286 @@ local function facePrompt(prompt)
 	end
 
 	if not part then
-		return
+		return false
 	end
 
+	local originalCFrame = part.CFrame
 
-	local direction = (part.Position - hrp.Position).Unit
+	-- Bring pad in front of player
+	part.CFrame = hrp.CFrame * CFrame.new(0, 0, -5)
 
-	hrp.CFrame = CFrame.new(
-		hrp.Position,
-		hrp.Position + Vector3.new(direction.X, 0, direction.Z)
-	)
+	prompt.RequiresLineOfSight = false
+	prompt.MaxActivationDistance = math.huge
+	prompt.HoldDuration = 0
 
+	task.wait(0.2)
+
+	fireproximityprompt(prompt)
+
+	part.CFrame = originalCFrame
+
+	return true
 end
+
+------------------------
+-- HANDLE BOX DELIVERY
+------------------------
 
 local function handleBoxDelivery()
 
-	local gui = player.PlayerGui.UI.Uni.Interfaces.BoxDelivery
+	local Players = game:GetService("Players")
+	local VirtualInputManager = game:GetService("VirtualInputManager")
 
+	local player = Players.LocalPlayer
+
+	local function clickButton(button)
+		local pos = button.AbsolutePosition
+		local size = button.AbsoluteSize
+		local x = pos.X + size.X / 2
+		local y = pos.Y + size.Y / 2
+
+		VirtualInputManager:SendMouseMoveEvent(
+			x,
+			y,
+			game
+		)
+
+		task.wait(0.3)
+		VirtualInputManager:SendMouseButtonEvent(
+			x,
+			y,
+			0,
+			true,
+			game,
+			1
+		)
+		task.wait(0.1)
+		VirtualInputManager:SendMouseButtonEvent(
+			x,
+			y,
+			0,
+			false,
+			game,
+			1
+		)
+	end
+
+	local gui = player.PlayerGui.UI.Uni.Interfaces.BoxDelivery
 	repeat
 		task.wait(0.2)
 	until gui.Visible
 
-
-	print("BoxDelivery opened")
-
-
 	local boxNeeded = gui.BoxNeeded
 	local buttons = gui.Buttons
-
 	local neededImage = boxNeeded.Image
 
-	print("Needed:", neededImage)
-
-
 	for _, button in ipairs(buttons:GetDescendants()) do
-
 		if button:IsA("ImageButton") then
-
-			print(
-				"Checking:",
-				button:GetFullName(),
-				button.Image,
-				button:GetAttribute("Image")
-			)
-
-
 			local buttonImage = button:GetAttribute("Image")
 
-
 			if buttonImage == neededImage or button.Image == neededImage then
-
-				print("MATCH FOUND:", button:GetFullName())
-
-
 				clickButton(button)
-
-
-				return
+				return true
 
 			end
 		end
 	end
-
-
-	warn("No matching button found")
-
-end
-
-local function moveNearPrompt(prompt)
-
-	local part = prompt.Parent
-
-	if not part:IsA("BasePart") then
-		part = prompt:FindFirstAncestorWhichIsA("BasePart")
-	end
-
-	if not part then
-		return
-	end
-
-	hrp.CFrame = part.CFrame * CFrame.new(0, 3, 5)
-
-	task.wait(0.5)
-
-end
-
-local function faceCameraToPrompt(prompt)
-
-	local part = prompt.Parent
-
-	if not part:IsA("BasePart") then
-		part = prompt:FindFirstAncestorWhichIsA("BasePart")
-	end
-
-	if not part then
-		return
-	end
-
-	local camera = workspace.CurrentCamera
-
-	camera.CFrame = CFrame.new(
-		camera.CFrame.Position,
-		part.Position
-	)
-
-end
-
-local function triggerCarPrompt()
-
-	local carName = player.Name .. "-Car"
-
-    local car = workspace.SessionVehicles:WaitForChild(carName, 10)
-
-    if not car then
-        warn("Couldn't find spawned car:", carName)
-        return
-    end
-
-	local prompt
-
-	repeat
-		prompt = car:FindFirstChild("ProximityPrompt", true)
-		task.wait(0.2)
-	until prompt
-
-
-	prompt.MaxActivationDistance = 9999
-
-
-	local part = prompt.Parent
-
-	if not part:IsA("BasePart") then
-		part = prompt:FindFirstAncestorWhichIsA("BasePart")
-	end
-
-
-	if part then
-		hrp.CFrame = part.CFrame * CFrame.new(0,3,5)
-	end
-
-
-	task.wait(0.5)
-
-	faceCameraToPrompt(prompt)
-
-	task.wait(1)
-
-	fireproximityprompt(prompt)
-
-end
-
-local function hoverOverPad()
-
-	local camera = workspace.CurrentCamera
-
-	-- use player's body position instead of pad position
-	local screenPos, visible = camera:WorldToViewportPoint(
-		hrp.Position - Vector3.new(0, 2.5, 0) -- around feet/legs
-	)
-
-	print(
-		"Player screen position:",
-		screenPos.X,
-		screenPos.Y,
-		"Visible:",
-		visible
-	)
-
-	if visible and screenPos.Z > 0 then
-
-		VirtualInputManager:SendMouseMoveEvent(
-			screenPos.X,
-			screenPos.Y,
-			game
-		)
-
-		print("Mouse moved to player's feet")
-
-	else
-		warn("Player not visible on screen")
-	end
-end
-
-
-
--- Find BoxPads
-local function getBoxPads()
-
-	local pads = {}
-
-	for _, obj in ipairs(workspace:GetDescendants()) do
-		if obj.Name == "BoxPad" then
-			table.insert(pads, obj)
-		end
-	end
-
-	return pads
-end
-
-local function triggerPadPrompt(pad)
-
-	local prompt
-
-	repeat
-		for _, obj in ipairs(pad:GetDescendants()) do
-			if obj:IsA("ProximityPrompt") then
-				prompt = obj
-				break
-			end
-		end
-
-		task.wait(0.2)
-
-	until prompt
-
-
-	prompt.MaxActivationDistance = 10
-
-
-	local part = prompt.Parent
-
-	if part:IsA("BasePart") then
-		hrp.CFrame = part.CFrame * CFrame.new(0,3,5)
-	end
-
-
-	task.wait(0.5)
-
-	faceCameraToPrompt(prompt)
-
-	task.wait(1)
-
-	fireproximityprompt(prompt)
-
-end
-
-local function enablePadPrompts()
-
-	for _, pad in ipairs(boxPads) do
-
-		for _, obj in ipairs(pad:GetDescendants()) do
-
-			if obj:IsA("ProximityPrompt") then
-
-				obj.MaxActivationDistance = 20
-
-				print("Enabled:", obj:GetFullName())
-
-			end
-		end
-	end
-end
-
--- Teleport above pad
-local function teleportToPad(index)
-
-	local pad = boxPads[index]
-
-	if not pad then
-		warn("No pad at index:", index)
-		return false
-	end
-
-	local cf
-
-	if pad:IsA("BasePart") then
-		cf = pad.CFrame
-	elseif pad:IsA("Model") then
-		cf = pad:GetPivot()
-	end
-
-	if cf then
-
-		hrp.CFrame =
-			cf
-			* CFrame.new(10, 8, 0)
-			* CFrame.Angles(0, math.rad(-90), 0)
-
-		print("Teleported above pad", index)
-
-		return true
-	end
-
 	return false
 end
 
--- Main process
-local function startProcess()
+------------------------
+-- TRIGGER CAR PROMPT
+------------------------
 
-	if started then
-		return
+local function triggerCarPrompt()
+	local Players = game:GetService("Players")
+
+	local player = Players.LocalPlayer
+	local character = player.Character or player.CharacterAdded:Wait()
+	local hrp = character:WaitForChild("HumanoidRootPart")
+
+	local carName = player.Name .. "-Car"
+
+	local car = workspace:WaitForChild("SessionVehicles"):WaitForChild(carName, 10)
+
+	if not car then
+		return false
 	end
-
-
-	started = true
-
-
-	hrp.CFrame =
-		CFrame.new(1304.97,-77.76,-9965.97)
-		*
-		CFrame.Angles(0,math.rad(-90),0)
-
-
-
-	local controlPanel =
-		workspace.Buildings.AWAWAWAWA.SaharaInterior.Interior["Conveyor belt"]["Control panel"]
-
 
 	local prompt
 
-
 	repeat
-
-		for _,obj in ipairs(controlPanel:GetDescendants()) do
-
-			if obj:IsA("ProximityPrompt") then
-
-				prompt = obj
-
-				break
-
-			end
+		prompt = car:FindFirstChildWhichIsA("ProximityPrompt", true)
+		if not prompt then
+			task.wait(0.2)
 		end
-
-		task.wait(.5)
-
 	until prompt
 
+	prompt.MaxActivationDistance = 9999
 
+	local promptPart = prompt.Parent
 
-	prompt.MaxActivationDistance = 20
+	if not promptPart:IsA("BasePart") then
+		promptPart = prompt:FindFirstAncestorWhichIsA("BasePart")
+	end
 
+	if not promptPart then
+		return false
+	end
+
+	hrp.CFrame = promptPart.CFrame * CFrame.new(0, 3, 5)
+
+	task.wait(0.5)
+
+	local camera = workspace.CurrentCamera
+
+	camera.CFrame = CFrame.lookAt(
+		camera.CFrame.Position,
+		promptPart.Position
+	)
+
+	task.wait(0.5)
 	fireproximityprompt(prompt)
-
-
-	task.wait(1)
-
-
-
-	local gui = player.PlayerGui
-
-	local checklist =
-		gui.UI.Uni.Interfaces.AmazonChecklist
-
-
-	local buttons =
-		gui.UI.Uni.Interfaces.BoxDelivery.Buttons
-
-	local function pressButton(name,amount)
-
-		local button = buttons:FindFirstChild(name)
-
-
-		if button then
-
-			for i=1,amount do
-
-				clickButton(button)
-
-				task.wait(.01)
-
-			end
-
-		else
-
-			warn("Missing button:",name)
-
-		end
-	end
-
-	for _,item in ipairs(checklist.List:GetChildren()) do
-
-		local value = item:FindFirstChild("Value")
-
-
-		if value then
-
-			local amount = tonumber(value.Text)
-
-
-			if amount and amount > 0 then
-
-				pressButton(item.Name,amount)
-
-			end
-		end
-	end
-
-
-
-	print("Checklist completed")
-
-
-
-	repeat
-
-		task.wait(1)
-
-		boxPads = getBoxPads()
-
-		print("Searching pads:",#boxPads)
-
-	until #boxPads > 0
-
-
-
-	print("Pads found:",#boxPads)
-
-
-
-	enablePadPrompts()
-
-    for i = 1, #boxPads do
-
-        currentPad = i
-        currentPadObject = boxPads[i]
-
-        teleportToPad(i)
-
-        task.wait(1)
-
-        carspawner()
-
-        task.wait(2)
-
-        triggerPadPrompt(currentPadObject)
-
-        task.wait(1)
-
-        triggerCarPrompt()
-
-        task.wait(1)
-
-        handleBoxDelivery()
-
-        task.wait(1)
-
-        -- return to the exact same pad
-        local pad = currentPadObject
-
-        local cf
-        if pad:IsA("BasePart") then
-            cf = pad.CFrame
-        elseif pad:IsA("Model") then
-            cf = pad:GetPivot()
-        end
-
-        if cf then
-            hrp.CFrame =
-                cf
-                * CFrame.new(0, 8, 0)
-                * CFrame.Angles(0, math.rad(-90), 0)
-        end
-
-        task.wait(1)
-
-        camera.CameraType = Enum.CameraType.Custom
-
-        task.wait(1)
-
-        hoverOverPad()
-
-    end
-
+	return true
 end
 
+------------------------
+-- GET PLACEMENT MODEL
+------------------------
 
+local function getPlacementModel(timeout)
+	local Players = game:GetService("Players")
+	local RunService = game:GetService("RunService")
 
-startButton.MouseButton1Click:Connect(function()
+	local player = Players.LocalPlayer
+	local mouse = player:GetMouse()
 
-	startProcess()
+	local validMeshes = {
+		Long = true,
+		SmallLong = true,
+		Medium = true,
+		Small = true,
+		Large = true,
+	}
 
-end)
+	local start = tick()
+
+	while tick() - start < (timeout or 10) do
+		local target = mouse.Target
+
+		if target
+			and target:IsA("MeshPart")
+			and validMeshes[target.Name] then
+
+			local model = target:FindFirstAncestorOfClass("Model")
+
+			if model then
+				return model
+			end
+		end
+
+		RunService.RenderStepped:Wait()
+	end
+	return nil
+end
+
+------------------------
+-- PLACE MODELS
+------------------------
+
+local function placeModelsOnPad(model, pad)
+	local modelCFrame = model:GetPivot()
+	local padCFrame = pad.CFrame
+
+	model:PivotTo(padCFrame)
+end
+
+------------------------
+-- TELEPORT PLAYER
+------------------------
+
+function teleport(turn)
+	local player = game.Players.LocalPlayer
+	player.Character:WaitForChild("HumanoidRootPart").CFrame = CFrame.new(1256.83, -77.85, -9981.08) * CFrame.Angles(0,math.rad(turn),0)
+end
+
+------------------------------------------------
+-- MAIN LOOP
+------------------------------------------------
+
+local farming = false
+
+function runToggle(Value)
+	farming = Value
+	if not farming then return end
+
+	task.spawn(function()
+		completeChecklist()
+
+		if not farming then return end
+		teleport(-90)
+		task.wait(0.5)
+
+		if not farming then return end
+		spawnVehicle()
+		task.wait(0.5)
+
+		local boxPads = collectBoxPads()
+
+		for _, pad in ipairs(boxPads) do
+			if not farming then break end
+
+			activatePad(pad)
+			task.wait(0.5)
+
+			if not farming then break end
+			triggerCarPrompt()
+			task.wait(0.5)
+
+			if not farming then break end
+			handleBoxDelivery()
+			task.wait(0.5)
+
+			if not farming then break end
+			teleport(90)
+			task.wait(0.5)
+
+			local package = getPlacementModel()
+
+			if package and farming then
+				placeModelsOnPad(package, pad)
+				task.wait(4)
+			end
+		end
+
+		if farming then
+			warn("FINISHED")
+		end
+	end)
+end
+
+-----------------------------------------------
+-- MAIN UI SETUP
+-----------------------------------------------
+Library:Notify({
+   Title = "ZachHub",
+   Content = "Use 'P' to hide/unhide the UI.",
+   Duration = 5,
+   Image = 4483362458,
+})
+
+-----------------------------------------------
+-- AUTOFARM UI SECTION
+-----------------------------------------------
+
+local Autofarm = Window:CreateTab("Autofarm", 4483362458)
+local GrinderSection = Autofarm:CreateSection("Sahara Delivery Farm")
+
+Autofarm:CreateToggle({
+	Name = "Sahara Delivery Farm",
+	CurrentValue = false,
+	Flag = "Sahara",
+	Callback = function(Value)
+		runToggle(Value)
+	end
+})
