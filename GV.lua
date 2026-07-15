@@ -103,6 +103,14 @@ local function completeChecklist()
 	prompt.MaxActivationDistance = math.huge
 	task.wait(0.25)
 
+	local camera = workspace.CurrentCamera
+	local promptPart = prompt.Parent
+
+	camera.CFrame = CFrame.lookAt(
+		camera.CFrame.Position,
+		promptPart.Position
+	)
+
 	prompt:InputHoldBegin()
 	task.wait(prompt.HoldDuration)
 	prompt:InputHoldEnd()
@@ -255,7 +263,6 @@ local function activatePad(pad)
 
 	local originalCFrame = part.CFrame
 
-	-- Bring pad in front of player
 	part.CFrame = hrp.CFrame * CFrame.new(0, 0, -5)
 
 	prompt.RequiresLineOfSight = false
@@ -263,6 +270,16 @@ local function activatePad(pad)
 	prompt.HoldDuration = 0
 
 	task.wait(0.2)
+
+	local camera = workspace.CurrentCamera
+	local promptPart = prompt.Parent
+
+	camera.CFrame = CFrame.lookAt(
+		camera.CFrame.Position,
+		promptPart.Position
+	)
+
+	task.wait(0.5)
 
 	fireproximityprompt(prompt)
 
@@ -330,7 +347,6 @@ local function handleBoxDelivery()
 			if buttonImage == neededImage or button.Image == neededImage then
 				clickButton(button)
 				return true
-
 			end
 		end
 	end
@@ -414,7 +430,7 @@ local function getPlacementModel(timeout)
 
 	local start = tick()
 
-	while tick() - start < (timeout or 10) do
+	while tick() - start < (timeout or 5) do
 		local target = mouse.Target
 
 		if target
@@ -423,7 +439,7 @@ local function getPlacementModel(timeout)
 
 			local model = target:FindFirstAncestorOfClass("Model")
 
-			if model then
+			if model and model.Parent == workspace then
 				return model
 			end
 		end
@@ -448,9 +464,14 @@ end
 -- TELEPORT PLAYER
 ------------------------
 
-function teleport(turn)
+function teleport(stage, turn)
 	local player = game.Players.LocalPlayer
-	player.Character:WaitForChild("HumanoidRootPart").CFrame = CFrame.new(1256.83, -77.85, -9981.08) * CFrame.Angles(0,math.rad(turn),0)
+
+	if stage == 1 then
+		player.Character:WaitForChild("HumanoidRootPart").CFrame = CFrame.new(1301.79, -77.85, -9968.01) * CFrame.Angles(0,math.rad(turn),0)
+	elseif stage == 2 then
+		player.Character:WaitForChild("HumanoidRootPart").CFrame = CFrame.new(1256.83, -77.85, -9981.08) * CFrame.Angles(0,math.rad(turn),0)
+	end
 end
 
 ------------------------------------------------
@@ -464,44 +485,46 @@ function runToggle(Value)
 	if not farming then return end
 
 	task.spawn(function()
+		teleport(1, -90)
 		completeChecklist()
 
 		if not farming then return end
-		teleport(-90)
+		teleport(2, -90)
 		task.wait(0.5)
 
 		if not farming then return end
 		spawnVehicle()
 		task.wait(0.5)
 
-		local boxPads = collectBoxPads()
+		while farming do
+			local boxPads = collectBoxPads()
 
-		for _, pad in ipairs(boxPads) do
-			if not farming then break end
+			for _, pad in ipairs(boxPads) do
+				if not farming then break end
+				activatePad(pad)
+				task.wait(0.5)
 
-			activatePad(pad)
-			task.wait(0.5)
+				if not farming then break end
+				triggerCarPrompt()
+				task.wait(0.5)
 
-			if not farming then break end
-			triggerCarPrompt()
-			task.wait(0.5)
+				if not farming then break end
+				handleBoxDelivery()
+				task.wait(0.5)
 
-			if not farming then break end
-			handleBoxDelivery()
-			task.wait(0.5)
+				if not farming then break end
+				teleport(2, 90)
+				task.wait(2)
 
-			if not farming then break end
-			teleport(90)
-			task.wait(0.5)
+				local package = getPlacementModel()
 
-			local package = getPlacementModel()
-
-			if package and farming then
-				placeModelsOnPad(package, pad)
-				task.wait(4)
+				if package and farming then
+					placeModelsOnPad(package, pad)
+					task.wait(1)
+				end
 			end
+			task.wait(1)
 		end
-
 		if farming then
 			warn("FINISHED")
 		end
