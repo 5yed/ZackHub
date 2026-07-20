@@ -69,14 +69,14 @@ end
 local placeId = game.PlaceId
 
 if placeId == 891852901 then
-    status.Text = "Loading Greenville..."
+    status.Text = "Loading Zackhub for Greenville..."
     task.wait(0.5)
 
     loadstring(game:HttpGet("https://raw.githubusercontent.com/5yed/ZackHub/refs/heads/main/GV.lua"))()
     closeLoader()
 
 elseif placeId == 136020512003847 then
-    status.Text = "Loading Sahara Delivery..."
+    status.Text = "Loading Zackhub for SDBR..."
     task.wait(0.5)
 
     loadstring(game:HttpGet("https://raw.githubusercontent.com/5yed/ZackHub/refs/heads/main/SDBR.lua"))()
