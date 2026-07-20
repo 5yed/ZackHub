@@ -130,9 +130,9 @@ local function completeChecklist()
 		local y = pos.Y + size.Y/2
 
 		VirtualInputManager:SendMouseMoveEvent(x, y, game)
-		task.wait(0.05)
+		task.wait(0.01)
+
 		VirtualInputManager:SendMouseButtonEvent(x, y, 0, true, game, 1)
-		task.wait(0.05)
 		VirtualInputManager:SendMouseButtonEvent(x, y, 0, false, game, 1)
 	end
 
@@ -146,7 +146,7 @@ local function completeChecklist()
 			if button and button:IsA("ImageButton") then
 				for i = 1, amount do
 					clickButton(button)
-					task.wait(0.1)
+					task.wait(0.01)
 				end
 			else
 				warn("Couldn't find button:", item.Name)
@@ -499,36 +499,62 @@ function runToggle(Value)
 		while farming do
 			local boxPads = collectBoxPads()
 
-			for _, pad in ipairs(boxPads) do
-				if not farming then break end
+			local i = 1
+			while farming and i <= #boxPads do
+				local pad = boxPads[i]
+
 				activatePad(pad)
-				task.wait(0.5)
-
-				if not farming then break end
 				triggerCarPrompt()
-				task.wait(0.5)
-
-				if not farming then break end
 				handleBoxDelivery()
-				task.wait(0.5)
-
-				if not farming then break end
 				teleport(2, 90)
-				task.wait(2)
 
 				local package = getPlacementModel()
-
-				if package and farming then
+				if package then
 					placeModelsOnPad(package, pad)
-					task.wait(1)
 				end
+
+				boxPads = collectBoxPads()
+				i = i + 1
 			end
-			task.wait(1)
+
+			task.wait(0.5)
 		end
 		if farming then
 			warn("FINISHED")
 		end
 	end)
+end
+
+
+-----------------------------------------------
+-- ANTIAFK
+-----------------------------------------------
+
+local function enableAntiAfk()
+	if antiAfkEnabled then
+		return
+	end
+
+	antiAfkEnabled = true
+
+	game.Players.LocalPlayer.Idled:Connect(function()
+		VirtualUser:CaptureController()
+		VirtualUser:ClickButton2(Vector2.new())
+
+		Library:Notify({
+			Title = "Anti AFK",
+			Content = "Blocked idle kick request.",
+			Duration = 4,
+			Image = 4483362458,
+		})
+	end)
+
+	Library:Notify({
+		Title = "ZackHub",
+		Content = "Anti AFK enabled successfully.",
+		Duration = 5,
+		Image = 4483362458,
+	})
 end
 
 -----------------------------------------------
@@ -547,6 +573,8 @@ Library:Notify({
 
 local Autofarm = Window:CreateTab("Autofarm", 4483362458)
 local GrinderSection = Autofarm:CreateSection("Sahara Delivery Farm")
+local VirtualUser = game:GetService("VirtualUser")
+local antiAfkEnabled = false
 
 Autofarm:CreateToggle({
 	Name = "Sahara Delivery Farm",
@@ -555,6 +583,13 @@ Autofarm:CreateToggle({
 	Callback = function(Value)
 		runToggle(Value)
 	end
+})
+
+Autofarm:CreateButton({
+	Name = "Enable Anti-AFK",
+	Callback = function()
+		enableAntiAfk()
+	end,
 })
 
 local Paragraph = Autofarm:CreateParagraph({Title = "NOTE", Content = "Make sure you change your team to Sahara Delivery Driver before toggling the script."})
